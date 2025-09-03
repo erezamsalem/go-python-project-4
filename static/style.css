@@ -1,0 +1,159 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1,
+h2 {
+    color: #2c3e50;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* Form Styles */
+#addProductForm {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+#addProductForm input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+#addProductForm button {
+    padding: 10px 20px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+#addProductForm button:hover {
+    background-color: #219d54;
+}
+
+/* Product List Styles */
+#productList {
+    list-style: none;
+    padding: 0;
+}
+
+#productList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: #ecf0f1;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#productList li:nth-child(odd) {
+    background-color: #f8f9fa;
+}
+
+.product-info {
+    font-size: 1.1rem;
+}
+
+.product-info .price {
+    color: #27ae60;
+    font-weight: bold;
+    margin-left: 15px;
+}
+
+/* --- NEW STYLES START HERE --- */
+
+/* Container for the action buttons */
+.product-actions {
+    display: flex;
+    gap: 8px;
+    /* Adds a nice space between buttons */
+}
+
+/* Style for the blue edit button */
+.edit-btn {
+    background-color: #3498db;
+    /* Blue color */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.edit-btn:hover {
+    background-color: #2980b9;
+    /* Darker blue on hover */
+}
+
+/* --- END OF NEW STYLES --- */
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
+
+/* --- RESPONSIVE STYLES FOR MOBILE --- */
+
+@media (max-width: 480px) {
+
+    /* Make the main form stack vertically */
+    #addProductForm {
+        flex-direction: column; /* Change from horizontal to vertical */
+        align-items: stretch;   /* Make button and inputs full width */
+    }
+
+    /* Adjust the main container's padding */
+    .container {
+        padding: 20px 15px; /* Reduce side padding for more space */
+    }
+
+    /* Stack the product list items vertically */
+    #productList li {
+        flex-direction: column;     /* Stack product info and buttons */
+        align-items: flex-start;  /* Align content to the left */
+        gap: 12px;                  /* Add space between the stacked items */
+    }
+
+    /* Make the action buttons take up more space if needed */
+    .product-actions {
+        width: 100%;
+        justify-content: flex-end; /* Push buttons to the right */
+    }
+}

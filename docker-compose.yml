@@ -1,0 +1,31 @@
+services:
+  # --- DATABASE FOR THE PYTHON FLASK APP ---
+  db:
+    image: postgres:16-alpine
+    container_name: python-postgres-db
+    environment:
+      POSTGRES_USER: adminuser
+      POSTGRES_PASSWORD: adminuser
+      POSTGRES_DB: flask
+    ports:
+      - "5433:5432" # <-- CHANGED
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: always
+
+  # --- THE PYTHON FLASK APPLICATION SERVICE ---
+  app:
+    container_name: python-server
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: "postgresql://adminuser:adminuser@db:5432/flask?sslmode=disable"
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    restart: always
+
+volumes:
+  db-data:

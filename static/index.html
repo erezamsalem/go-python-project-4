@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Products CRUD</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📦Products Management📦</h1>
+
+        <div class="form-container">
+            <h2>Add New Product</h2>
+            <form id="addProductForm">
+                <input type="text" id="name" placeholder="Product Name" required>
+                <input type="number" id="price" placeholder="Price" step="0.01" required>
+                <button type="submit">Add Product</button>
+            </form>
+        </div>
+
+        <div class="list-container">
+            <h2>Product List</h2>
+            <ul id="productList">
+                </ul>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
