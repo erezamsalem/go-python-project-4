@@ -1,0 +1,16 @@
+name: CI/CD for Local Docker
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-redeploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Rebuild and Restart Docker Container
+      run: docker-compose up -d --build app
