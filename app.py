@@ -1,8 +1,9 @@
 import os
-import psycopg # <-- CHANGED
+import psycopg
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,20 +15,25 @@ CORS(app)  # Enable CORS for all routes
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
-    """Establishes a connection to the database."""
-    try:
-        # Use the new psycopg library's connect method
-        conn = psycopg.connect(DATABASE_URL) # <-- CHANGED
-        return conn
-    # Update the exception type to match the new library
-    except psycopg.OperationalError as e: # <-- CHANGED
-        print(f"Could not connect to database: {e}")
-        return None
+    """Establishes a connection to the database with retries."""
+    retries = 5
+    delay = 2
+    while retries > 0:
+        try:
+            conn = psycopg.connect(DATABASE_URL)
+            return conn
+        except psycopg.OperationalError as e:
+            print(f"Could not connect to database: {e}. Retrying in {delay} seconds...")
+            retries -= 1
+            time.sleep(delay)
+    print("Could not connect to the database after several retries. Exiting.")
+    return None
 
 def create_products_table():
     """Create the products table if it doesn't exist."""
     conn = get_db_connection()
     if conn is None:
+        print("Skipping table creation due to failed database connection.")
         return
     try:
         with conn.cursor() as cur:
@@ -40,12 +46,14 @@ def create_products_table():
             """)
             conn.commit()
             print("Table 'products' checked/created successfully.")
-    # Update the exception type to match the new library
-    except psycopg.Error as e: # <-- CHANGED
+    except psycopg.Error as e:
         print(f"Error creating table: {e}")
     finally:
         if conn:
             conn.close()
+
+# Ensure the table exists when the application starts
+create_products_table()
 
 # --- Serve Frontend ---
 @app.route('/')
@@ -68,7 +76,7 @@ def add_product():
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
-        
+
     try:
         with conn.cursor() as cur:
             sql = "INSERT INTO products (name, price) VALUES (%s, %s) RETURNING id;"
@@ -77,8 +85,7 @@ def add_product():
             conn.commit()
             new_product = {'id': product_id, 'name': data['name'], 'price': data['price']}
             return jsonify(new_product), 201
-    # Update the exception type to match the new library
-    except psycopg.Error as e: # <-- CHANGED
+    except psycopg.Error as e:
         return jsonify({"error": f"Failed to create product: {e}"}), 500
     finally:
         if conn:
@@ -97,8 +104,7 @@ def get_products():
             rows = cur.fetchall()
             products = [{'id': row[0], 'name': row[1], 'price': float(row[2])} for row in rows]
             return jsonify(products), 200
-    # Update the exception type to match the new library
-    except psycopg.Error as e: # <-- CHANGED
+    except psycopg.Error as e:
         return jsonify({"error": f"Failed to query products: {e}"}), 500
     finally:
         if conn:
@@ -119,8 +125,7 @@ def get_product(id):
                 return jsonify({"error": "Product not found"}), 404
             product = {'id': row[0], 'name': row[1], 'price': float(row[2])}
             return jsonify(product), 200
-    # Update the exception type to match the new library
-    except psycopg.Error as e: # <-- CHANGED
+    except psycopg.Error as e:
         return jsonify({"error": f"Failed to query product: {e}"}), 500
     finally:
         if conn:
@@ -136,7 +141,7 @@ def update_product(id):
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
-        
+
     try:
         with conn.cursor() as cur:
             sql = "UPDATE products SET name = %s, price = %s WHERE id = %s;"
@@ -146,8 +151,7 @@ def update_product(id):
             conn.commit()
             updated_product = {'id': id, 'name': data['name'], 'price': data['price']}
             return jsonify(updated_product), 200
-    # Update the exception type to match the new library
-    except psycopg.Error as e: # <-- CHANGED
+    except psycopg.Error as e:
         return jsonify({"error": f"Failed to update product: {e}"}), 500
     finally:
         if conn:
@@ -168,14 +172,13 @@ def delete_product(id):
                 return jsonify({"error": "Product not found"}), 404
             conn.commit()
             return jsonify({"message": "Product deleted successfully"}), 200
-    # Update the exception type to match the new library
-    except psycopg.Error as e: # <-- CHANGED
+    except psycopg.Error as e:
         return jsonify({"error": f"Failed to delete product: {e}"}), 500
     finally:
         if conn:
             conn.close()
 
 if __name__ == '__main__':
-    create_products_table() # Ensure the table exists before starting
+    # This block is still useful for running locally without Docker/Gunicorn
     port = int(os.environ.get("APP_PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
