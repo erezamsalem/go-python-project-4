@@ -3,7 +3,7 @@ import psycopg
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import time
+from flasgger import Swagger  # Import Swagger
 
 # Load environment variables from .env file
 load_dotenv()
@@ -11,29 +11,25 @@ load_dotenv()
 app = Flask(__name__, static_folder='static')
 CORS(app)  # Enable CORS for all routes
 
+# Initialize Swagger
+swagger = Swagger(app)
+
 # Database connection URL from environment variable
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
-    """Establishes a connection to the database with retries."""
-    retries = 5
-    delay = 2
-    while retries > 0:
-        try:
-            conn = psycopg.connect(DATABASE_URL)
-            return conn
-        except psycopg.OperationalError as e:
-            print(f"Could not connect to database: {e}. Retrying in {delay} seconds...")
-            retries -= 1
-            time.sleep(delay)
-    print("Could not connect to the database after several retries. Exiting.")
-    return None
+    """Establishes a connection to the database."""
+    try:
+        conn = psycopg.connect(DATABASE_URL)
+        return conn
+    except psycopg.OperationalError as e:
+        print(f"Could not connect to database: {e}")
+        return None
 
 def create_products_table():
     """Create the products table if it doesn't exist."""
     conn = get_db_connection()
     if conn is None:
-        print("Skipping table creation due to failed database connection.")
         return
     try:
         with conn.cursor() as cur:
@@ -52,9 +48,6 @@ def create_products_table():
         if conn:
             conn.close()
 
-# Ensure the table exists when the application starts
-create_products_table()
-
 # --- Serve Frontend ---
 @app.route('/')
 def serve_index():
@@ -66,9 +59,34 @@ def serve_static(path):
 
 # --- API Endpoints ---
 
-# POST /products - Create a new product
 @app.route('/products', methods=['POST'])
 def add_product():
+    """
+    Create a new product
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          required:
+            - name
+            - price
+          properties:
+            name:
+              type: string
+              example: "Laptop"
+            price:
+              type: number
+              example: 999.99
+    responses:
+      201:
+        description: Product created successfully
+      400:
+        description: Invalid request body
+    """
     data = request.get_json()
     if not data or 'name' not in data or 'price' not in data:
         return jsonify({"error": "Invalid request body"}), 400
@@ -76,7 +94,7 @@ def add_product():
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
-
+        
     try:
         with conn.cursor() as cur:
             sql = "INSERT INTO products (name, price) VALUES (%s, %s) RETURNING id;"
@@ -91,9 +109,17 @@ def add_product():
         if conn:
             conn.close()
 
-# GET /products - Get all products
 @app.route('/products', methods=['GET'])
 def get_products():
+    """
+    Get all products
+    ---
+    tags:
+      - Products
+    responses:
+      200:
+        description: A list of products
+    """
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
@@ -110,9 +136,24 @@ def get_products():
         if conn:
             conn.close()
 
-# GET /products/<id> - Get a single product
 @app.route('/products/<int:id>', methods=['GET'])
 def get_product(id):
+    """
+    Get a single product by ID
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Product found
+      404:
+        description: Product not found
+    """
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
@@ -131,9 +172,33 @@ def get_product(id):
         if conn:
             conn.close()
 
-# PUT /products/<id> - Update a product
 @app.route('/products/<int:id>', methods=['PUT'])
 def update_product(id):
+    """
+    Update a product by ID
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+      - name: body
+        in: body
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+            price:
+              type: number
+    responses:
+      200:
+        description: Product updated successfully
+      404:
+        description: Product not found
+    """
     data = request.get_json()
     if not data or 'name' not in data or 'price' not in data:
         return jsonify({"error": "Invalid request body"}), 400
@@ -141,7 +206,7 @@ def update_product(id):
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
-
+        
     try:
         with conn.cursor() as cur:
             sql = "UPDATE products SET name = %s, price = %s WHERE id = %s;"
@@ -157,9 +222,24 @@ def update_product(id):
         if conn:
             conn.close()
 
-# DELETE /products/<id> - Delete a product
 @app.route('/products/<int:id>', methods=['DELETE'])
 def delete_product(id):
+    """
+    Delete a product by ID
+    ---
+    tags:
+      - Products
+    parameters:
+      - name: id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Product deleted successfully
+      404:
+        description: Product not found
+    """
     conn = get_db_connection()
     if conn is None:
         return jsonify({"error": "Database connection failed"}), 500
@@ -179,6 +259,6 @@ def delete_product(id):
             conn.close()
 
 if __name__ == '__main__':
-    # This block is still useful for running locally without Docker/Gunicorn
+    create_products_table()
     port = int(os.environ.get("APP_PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
