@@ -12,10 +12,9 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Force Cleanup and Rebuild
-      # We manually stop/remove by name first to bypass any compose lock-ins
-      # '|| true' ensures the script continues even if containers are already gone
+    - name: Windows Force Cleanup and Rebuild
+      # We use PowerShell syntax to ignore errors if containers don't exist
       run: |
-        docker stop python-server python-postgres-db || true
-        docker rm -f python-server python-postgres-db || true
+        docker stop python-server, python-postgres-db 2>$null
+        docker rm -f python-server, python-postgres-db 2>$null
         docker-compose up -d --build
