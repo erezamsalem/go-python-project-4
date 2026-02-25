@@ -8,9 +8,15 @@ services:
       POSTGRES_PASSWORD: adminuser
       POSTGRES_DB: flask
     ports:
-      - "5433:5432" # <-- CHANGED
+      - "5433:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      # We map your existing 46.1MB volume here
+      - go-pythonproject4_db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adminuser -d flask"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
 
   # --- THE PYTHON FLASK APPLICATION SERVICE ---
@@ -22,10 +28,13 @@ services:
     environment:
       DATABASE_URL: "postgresql://adminuser:adminuser@db:5432/flask?sslmode=disable"
     depends_on:
-      - db
+      db:
+        condition: service_healthy # Waits for the DB to be fully ready
     volumes:
       - .:/app
     restart: always
 
 volumes:
-  db-data:
+  # This matches the 46.1MB volume seen in your Docker Desktop
+  go-pythonproject4_db-data:
+    external: true
