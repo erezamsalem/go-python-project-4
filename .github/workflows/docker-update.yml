@@ -13,4 +13,8 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Rebuild and Restart Docker Container
-      run: docker-compose up -d --build app
+      # We run 'down' first to remove existing containers and avoid name conflicts.
+      # Then we build and start all services in the background (-d).
+      run: |
+        docker-compose down
+        docker-compose up -d --build
