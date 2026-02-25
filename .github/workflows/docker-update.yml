@@ -12,9 +12,17 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Windows Force Cleanup and Rebuild
-      # We use PowerShell syntax to ignore errors if containers don't exist
+    - name: Redeploy Docker
+      shell: powershell
       run: |
-        docker stop python-server, python-postgres-db 2>$null
-        docker rm -f python-server, python-postgres-db 2>$null
+        # Tell PowerShell not to stop the script if a command fails
+        $ErrorActionPreference = 'SilentlyContinue'
+        
+        docker stop python-server
+        docker stop python-postgres-db
+        docker rm python-server
+        docker rm python-postgres-db
+        
+        # This is the only command that MUST succeed
+        $ErrorActionPreference = 'Continue'
         docker-compose up -d --build
