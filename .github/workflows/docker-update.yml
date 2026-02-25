@@ -12,8 +12,10 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Rebuild and Restart Docker Container
-      # --remove-orphans ensures old containers from previous manual runs are cleared
+    - name: Force Cleanup and Rebuild
+      # We manually stop/remove by name first to bypass any compose lock-ins
+      # '|| true' ensures the script continues even if containers are already gone
       run: |
-        docker-compose down --remove-orphans
+        docker stop python-server python-postgres-db || true
+        docker rm -f python-server python-postgres-db || true
         docker-compose up -d --build
